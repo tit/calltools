@@ -15,7 +15,7 @@ const (
 
 	baseUrl          = "https://calltools.ru/lk/cabapi_external/api/v1"
 	pathUsersBalance = baseUrl + "/users/balance"
-	pathPhonesCall   = baseUrl + "/phones/Call"
+	pathPhonesCall   = baseUrl + "/phones/call"
 )
 
 // CallTools is main struct for the API
@@ -41,27 +41,28 @@ func (client *Client) Balance() (balance float64, err error) {
 
 	response, err := http.Get(requestUrl)
 	if err != nil {
-		return balance, err
+		return
 	}
 
 	body := response.Body
+	defer response.Body.Close()
 
 	json, err := ioutil.ReadAll(body)
 	if err != nil {
-		return balance, err
+		return
 	}
 
 	balanceString, err := jsonparser.GetString(json, "balance")
 	if err != nil {
-		return balance, err
+		return
 	}
 
 	balance, err = strconv.ParseFloat(balanceString, bitSize64)
 	if err != nil {
-		return balance, err
+		return
 	}
 
-	return balance, err
+	return
 }
 
 func (client *Client) AddCall(campaignId int, phoneNumber string) (call Call, err error) {
@@ -77,6 +78,7 @@ func (client *Client) AddCall(campaignId int, phoneNumber string) (call Call, er
 	}
 
 	body := response.Body
+	defer response.Body.Close()
 
 	json, err := ioutil.ReadAll(body)
 	if err != nil {
