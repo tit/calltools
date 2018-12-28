@@ -22,7 +22,7 @@ const (
 type Client struct {
   // get API public key on https://zvonok.com/manager/users/profile/
   // @see https://zvonok.com/manager/users/profile/
-  apiPublicKey string
+  ApiPublicKey string
 }
 
 type Call struct {
@@ -33,7 +33,7 @@ type Call struct {
 }
 
 func (client *Client) Balance() (balance float64, err error) {
-  requestUrl := fmt.Sprintf("%s?public_key=%s", pathUsersBalance, client.apiPublicKey)
+  requestUrl := fmt.Sprintf("%s?public_key=%s", pathUsersBalance, client.ApiPublicKey)
 
   response, err := http.Get(requestUrl)
   if err != nil {
@@ -63,7 +63,7 @@ func (client *Client) Balance() (balance float64, err error) {
 
 func (client *Client) AddCall(campaignId int, phoneNumber string) (call Call, err error) {
   data := url.Values{
-    "public_key":  {client.apiPublicKey},
+    "public_key":  {client.ApiPublicKey},
     "campaign_id": {strconv.Itoa(campaignId)},
     "phone":       {phoneNumber},
   }
