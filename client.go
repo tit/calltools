@@ -25,10 +25,6 @@ type Client struct {
   apiPublicKey string
 }
 
-func NewClient(apiPublicKey string) *Client {
-  return &Client{apiPublicKey: apiPublicKey}
-}
-
 type Call struct {
   CallId      int
   Balance     float64
