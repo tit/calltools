@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 func main() {
-  client := Client{ApiPublicKey: "621a00762d174a32e159ec52781f35af"}
+  client := Client{ApiPublicKey: ""}
   balance, _ := client.Balance()
   fmt.Println(balance)
   // var callByPhoneNumber CallByPhoneNumber
