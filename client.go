@@ -1,4 +1,4 @@
-package calltools
+package main
 
 import (
   "fmt"
@@ -16,6 +16,7 @@ const (
   baseUrl          = "https://calltools.ru/lk/cabapi_external/api/v1"
   pathUsersBalance = baseUrl + "/users/balance"
   pathPhonesCall   = baseUrl + "/phones/call"
+  pathCallsByPhone = baseUrl + "/phones/calls_by_phone"
 )
 
 // CallTools is main struct for the API
@@ -25,43 +26,14 @@ type Client struct {
   ApiPublicKey string
 }
 
-type Call struct {
+type AddCallResult struct {
   CallId      int
   Balance     float64
   PhoneNumber string
   Created     time.Time
 }
 
-func (client *Client) Balance() (balance float64, err error) {
-  requestUrl := fmt.Sprintf("%s?public_key=%s", pathUsersBalance, client.ApiPublicKey)
-
-  response, err := http.Get(requestUrl)
-  if err != nil {
-    return
-  }
-
-  body := response.Body
-  defer response.Body.Close()
-
-  json, err := ioutil.ReadAll(body)
-  if err != nil {
-    return
-  }
-
-  balanceString, err := jsonparser.GetString(json, "balance")
-  if err != nil {
-    return
-  }
-
-  balance, err = strconv.ParseFloat(balanceString, bitSize64)
-  if err != nil {
-    return
-  }
-
-  return
-}
-
-func (client *Client) AddCall(campaignId int, phoneNumber string) (call Call, err error) {
+func (client *Client) AddCall(campaignId int, phoneNumber string) (addCallResult AddCallResult, err error) {
   data := url.Values{
     "public_key":  {client.ApiPublicKey},
     "campaign_id": {strconv.Itoa(campaignId)},
@@ -83,7 +55,7 @@ func (client *Client) AddCall(campaignId int, phoneNumber string) (call Call, er
 
   callId, err := jsonparser.GetInt(json, "call_id")
   if err != nil {
-    return call, fmt.Errorf(string(json))
+    return
   }
 
   balanceString, err := jsonparser.GetString(json, "balance")
@@ -110,10 +82,126 @@ func (client *Client) AddCall(campaignId int, phoneNumber string) (call Call, er
     return
   }
 
-  call.CallId = int(callId)
-  call.Balance = balance
-  call.PhoneNumber = phoneNumber
-  call.Created = created
+  addCallResult.CallId = int(callId)
+  addCallResult.Balance = balance
+  addCallResult.PhoneNumber = phoneNumber
+  addCallResult.Created = created
 
+  return
+}
+
+type CallByPhoneNumber struct {
+  campaignId      int
+  phoneNumber     string
+  fromDateCreated time.Time
+  toDateCreated   time.Time
+  fromDateUpdated time.Time
+  toDateUpdated   time.Time
+}
+
+type IvrData struct {
+  ivrNum       int
+  webhook      string
+  smsName      string
+  smsText      string
+  toPhone      string
+  buttonNum    int
+  toSipname    string
+  actionType   int
+  statusName   string
+  recognizeNum string
+  followIvrNum string
+}
+
+type CallByPhoneNumberResult struct {
+  phoneNumber       string
+  status            string
+  callId            int
+  created           time.Time
+  updated           time.Time
+  duration          int
+  ivrData           []IvrData
+  completed         time.Time
+  buttonNum         int
+  actionType        string
+  dialStatus        int
+  userChoice        string
+  audioclipId       int
+  recordedAudio     url.URL
+  statusDisplay     string
+  userChoiceDisplay string
+  sourceJson        string
+}
+
+func (client *Client) CallResultByPhoneNumber(callByPhoneNumber CallByPhoneNumber) (callByPhoneNumberResults []CallByPhoneNumberResult) {
+  // "from_created_date": {callByPhoneNumber.fromDateCreated.Format("2006-01-02 15:04:05")},
+  // "to_created_date":   {callByPhoneNumber.toDateCreated.Format("2006-01-02 15:04:05")},
+  // "from_updated_date": {callByPhoneNumber.fromDateUpdated.Format("2006-01-02 15:04:05")},
+  // "to_updated_date":   {callByPhoneNumber.toDateUpdated.Format("2006-01-02 15:04:05")},
+
+  apiPublicKey := client.ApiPublicKey
+  campaignId := strconv.Itoa(callByPhoneNumber.campaignId)
+  phoneNumber := callByPhoneNumber.phoneNumber
+
+  dateTimeFormat := "2006-01-02 15:04:05"
+  fromDateCreated := callByPhoneNumber.fromDateCreated.Format(dateTimeFormat)
+  toCreatedDate := callByPhoneNumber.toDateCreated.Format(dateTimeFormat)
+  fromUpdatedDate := callByPhoneNumber.fromDateUpdated.Format(dateTimeFormat)
+  toUpdatedDate := callByPhoneNumber.toDateUpdated.Format(dateTimeFormat)
+
+  response, err := http.Get(fmt.Sprintf("%s/?public_key=%s&campaign_id=%s&phone=%s&from_created_date=%s&to_created_date=%s&from_updated_date=%s&to_updated_date%s", pathCallsByPhone, apiPublicKey, campaignId, phoneNumber, fromDateCreated, toCreatedDate, fromUpdatedDate, toUpdatedDate))
+  if err != nil {
+    return
+  }
+
+  body := response.Body
+  defer response.Body.Close()
+
+  json, err := ioutil.ReadAll(body)
+  if err != nil {
+    return
+  }
+
+  var callByPhoneNumberResult CallByPhoneNumberResult
+
+  _, err = jsonparser.ArrayEach(json, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+    phoneNumber, err := jsonparser.GetString(value, "phone")
+    callByPhoneNumberResult.phoneNumber = phoneNumber
+    // callByPhoneNumberResult.status = status
+    // callByPhoneNumberResult.callId = int(callId)
+    //
+    // status, err := jsonparser.GetString(value, "status")
+    // callId, err := jsonparser.GetInt(value, "call_id")
+  })
+  if err != nil {
+    return
+  }
+
+  // status, err := jsonparser.GetString(json, "status")
+  // if err != nil {
+  //   return
+  // }
+  //
+  // callId, err := jsonparser.GetInt(json, "call_id")
+  // if err != nil {
+  //   return
+  // }
+
+  // callByPhoneNumberResult.created = created
+  // callByPhoneNumberResult.updated = updated
+  // callByPhoneNumberResult.duration = duration
+  // callByPhoneNumberResult.ivrData = ivrData
+  // callByPhoneNumberResult.completed = completed
+  // callByPhoneNumberResult.buttonNum = buttonNum
+  // callByPhoneNumberResult.actionType = actionType
+  // callByPhoneNumberResult.dialStatus = dialStatus
+  // callByPhoneNumberResult.userChoice = userChoice
+  // callByPhoneNumberResult.audioclipId = audioclipId
+  // callByPhoneNumberResult.recordedAudio = recorded_audio
+  // callByPhoneNumberResult.statusDisplay = statusDisplay
+  // callByPhoneNumberResult.userChoiceDisplay = userChoiceDisplay
+  // callByPhoneNumberResult.sourceJson = string(json)
+
+  callByPhoneNumberResults = append(callByPhoneNumberResults, callByPhoneNumberResult)
   return
 }
