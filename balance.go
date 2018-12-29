@@ -18,23 +18,21 @@ func (client *Client) Balance() (balance Balance, err error) {
 
   response, err := http.Get(requestUrl)
   if err != nil {
-    return balance, fmt.Errorf(requestUrl)
+    return
   }
-
-  body := response.Body
   defer response.Body.Close()
 
-  json, err := ioutil.ReadAll(body)
+  body, err := ioutil.ReadAll(response.Body)
   if err != nil {
     return
   }
 
-  balanceString, err := jsonparser.GetString(json, "balance")
+  rawBalance, err := jsonparser.GetString(body, "balance")
   if err != nil {
     return
   }
 
-  balanceFloat, err := strconv.ParseFloat(balanceString, bitSize64)
+  balanceFloat, err := strconv.ParseFloat(rawBalance, bitSize64)
   if err != nil {
     return
   }
