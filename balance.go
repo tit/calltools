@@ -8,12 +8,7 @@ import (
   "strconv"
 )
 
-type Balance struct {
-  approximate int
-  exact       float64
-}
-
-func (client *Client) Balance() (balance Balance, err error) {
+func (client *Client) Balance() (balance float64, err error) {
   requestUrl := fmt.Sprintf("%s?public_key=%s", pathUsersBalance, client.ApiPublicKey)
 
   response, err := http.Get(requestUrl)
@@ -32,12 +27,10 @@ func (client *Client) Balance() (balance Balance, err error) {
     return
   }
 
-  balanceFloat, err := strconv.ParseFloat(rawBalance, bitSize64)
+  balance, err = strconv.ParseFloat(rawBalance, bitSize64)
   if err != nil {
     return
   }
-
-  balance = Balance{approximate: int(balanceFloat), exact: balanceFloat}
 
   return
 }
