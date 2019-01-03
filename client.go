@@ -7,6 +7,7 @@ const (
   pathUsersBalance = baseUrl + "/users/balance"
   pathPhonesCall   = baseUrl + "/phones/call"
   pathCallsByPhone = baseUrl + "/phones/calls_by_phone"
+  pathCallById     = baseUrl + "/phones/call_by_id"
 )
 
 // CallTools is main struct for the API

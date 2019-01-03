@@ -75,6 +75,54 @@ func (client *Client) AddCall(campaignId int, phoneNumber string) (addCall AddCa
   return
 }
 
+func (client *Client) CallByPhoneNumber(campaignId int, phoneNumber string) (calls []Call, err error) {
+  queryUrl := fmt.Sprintf("%s/?public_key=%s&campaign_id=%d&phone=%s", pathCallsByPhone, client.ApiPublicKey, campaignId, phoneNumber)
+
+  response, err := http.Get(queryUrl)
+
+  if err != nil {
+    return
+  }
+
+  defer response.Body.Close()
+
+  body, err := ioutil.ReadAll(response.Body)
+  if err != nil {
+    return
+  }
+
+  calls, err = callsByJson(body)
+  if err != nil {
+    return
+  }
+
+  return
+}
+
+func (client *Client) CallByCallId(callId int) (calls []Call, err error) {
+  queryUrl := fmt.Sprintf("%s/?public_key=%s&call_id=%d", pathCallById, client.ApiPublicKey, callId)
+
+  response, err := http.Get(queryUrl)
+
+  if err != nil {
+    return
+  }
+
+  defer response.Body.Close()
+
+  body, err := ioutil.ReadAll(response.Body)
+  if err != nil {
+    return
+  }
+
+  calls, err = callsByJson(body)
+  if err != nil {
+    return
+  }
+
+  return
+}
+
 type Call struct {
   phoneNumber       string
   status            string
@@ -89,9 +137,10 @@ type Call struct {
   dialStatus        int
   userChoice        string
   audioclipId       int
-  recordedAudio     url.URL
+  recordedAudio     *url.URL
   statusDisplay     string
   userChoiceDisplay string
+  dialStatusDisplay string
 }
 
 type IvrData struct {
@@ -108,28 +157,7 @@ type IvrData struct {
   followIvrNum string
 }
 
-func (client *Client) CallByPhoneNumber(campaignId int, phoneNumber string, fromDateCreated time.Time, toDateCreated time.Time, fromDateUpdated time.Time, toDateUpdated time.Time) (calls []Call, err error) {
-  dateTimeFormat := "2006-01-02 15:04:05"
-
-  queryUrl := fmt.Sprintf("%s/?public_key=%s&campaign_id=%d&phone=%s&from_created_date=%s&to_created_date=%s&from_updated_date=%s&to_updated_date%s", pathCallsByPhone, client.ApiPublicKey, campaignId, phoneNumber,
-    fromDateCreated.Format(dateTimeFormat),
-    toDateCreated.Format(dateTimeFormat),
-    fromDateUpdated.Format(dateTimeFormat),
-    toDateUpdated.Format(dateTimeFormat))
-
-  response, err := http.Get(queryUrl)
-
-  if err != nil {
-    return
-  }
-
-  defer response.Body.Close()
-
-  body, err := ioutil.ReadAll(response.Body)
-  if err != nil {
-    return
-  }
-
+func callsByJson(body []byte) (calls []Call, err error) {
   _, err = jsonparser.ArrayEach(body, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
     phoneNumber, err := jsonparser.GetString(value, "phone")
     if err != nil {
@@ -141,11 +169,10 @@ func (client *Client) CallByPhoneNumber(campaignId int, phoneNumber string, from
       return
     }
 
-    callIdInt64, err := jsonparser.GetInt(value, "call_id")
+    callId, err := jsonparser.GetInt(value, "call_id")
     if err != nil {
       return
     }
-    callId := int(callIdInt64)
 
     createdString, err := jsonparser.GetString(value, "created")
     if err != nil {
@@ -167,37 +194,164 @@ func (client *Client) CallByPhoneNumber(campaignId int, phoneNumber string, from
       return
     }
 
-    durationInt64, err := jsonparser.GetInt(value, "duration")
+    duration, err := jsonparser.GetInt(value, "duration")
     if err != nil {
       return
     }
-    duration := int(durationInt64)
-
     var ivrDatas []IvrData
 
-    _, err = jsonparser.ArrayEach(body, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-      ivrNumInt64, err := jsonparser.GetInt(value, "ivr_num")
+    _, err = jsonparser.ArrayEach(value, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+      ivrNum, err := jsonparser.GetInt(value, "ivr_num")
       if err != nil {
         return
       }
 
-      ivrNum := int(ivrNumInt64)
+      webhook, err := jsonparser.GetString(value, "webhook")
+      if err != nil {
+        return
+      }
+
+      smsName, err := jsonparser.GetString(value, "sms_name")
+      if err != nil {
+        return
+      }
+
+      smsText, err := jsonparser.GetString(value, "sms_text")
+      if err != nil {
+        return
+      }
+
+      toPhone, _, _, err := jsonparser.Get(value, "to_phone")
+      if err != nil {
+        return
+      }
+
+      buttonNum, err := jsonparser.GetInt(value, "button_num")
+      if err != nil {
+        return
+      }
+
+      toSipname, _, _, err := jsonparser.Get(value, "to_sipname")
+      if err != nil {
+        return
+      }
+
+      actionType, err := jsonparser.GetInt(value, "action_type")
+      if err != nil {
+        return
+      }
+
+      statusName, err := jsonparser.GetString(value, "status_name")
+      if err != nil {
+        return
+      }
+
+      recognizeNum, _, _, err := jsonparser.Get(value, "recognize_num")
+      if err != nil {
+        return
+      }
+
+      followIvrNum, _, _, err := jsonparser.Get(value, "follow_ivr_num")
+      if err != nil {
+        return
+      }
 
       ivrData := IvrData{
-        ivrNum: ivrNum,
+        ivrNum:       int(ivrNum),
+        webhook:      webhook,
+        smsName:      smsName,
+        smsText:      smsText,
+        toPhone:      string(toPhone),
+        buttonNum:    int(buttonNum),
+        toSipname:    string(toSipname),
+        actionType:   int(actionType),
+        statusName:   statusName,
+        recognizeNum: string(recognizeNum),
+        followIvrNum: string(followIvrNum),
       }
 
       ivrDatas = append(ivrDatas, ivrData)
 
     }, "ivr_data")
 
+    completedString, err := jsonparser.GetString(value, "completed")
+    if err != nil {
+      return
+    }
+
+    completed, err := time.Parse(time.RFC3339, completedString)
+    if err != nil {
+      return
+    }
+
+    buttonNum, err := jsonparser.GetInt(value, "button_num")
+    if err != nil {
+      return
+    }
+
+    actionType, err := jsonparser.GetString(value, "action_type")
+    if err != nil {
+      return
+    }
+
+    dialStatus, err := jsonparser.GetInt(value, "dial_status")
+    if err != nil {
+      return
+    }
+
+    userChoice, err := jsonparser.GetString(value, "user_choice")
+    if err != nil {
+      return
+    }
+
+    audioclipId, err := jsonparser.GetInt(value, "audioclip_id")
+    if err != nil {
+      return
+    }
+
+    recordedAudioString, err := jsonparser.GetString(value, "recorded_audio")
+    if err != nil {
+      return
+    }
+
+    recordedAudio, err := url.Parse(recordedAudioString)
+    if err != nil {
+      return
+    }
+
+    statusDisplay, err := jsonparser.GetString(value, "status_display")
+    if err != nil {
+      return
+    }
+
+    dialStatusDisplay, err := jsonparser.GetString(value, "dial_status_display")
+    if err != nil {
+      return
+    }
+
+    userChoiceDisplay, err := jsonparser.GetString(value, "user_choice_display")
+    if err != nil {
+      return
+    }
+
     call := Call{
-      phoneNumber: phoneNumber,
-      status:      status,
-      callId:      callId,
-      created:     created,
-      updated:     updated,
-      duration:    duration,
+      phoneNumber:       phoneNumber,
+      status:            status,
+      callId:            int(callId),
+      created:           created,
+      updated:           updated,
+      duration:          int(duration),
+      ivrData:           ivrDatas,
+      completed:         completed,
+      buttonNum:         int(buttonNum),
+      actionType:        actionType,
+      dialStatus:        int(dialStatus),
+      userChoice:        userChoice,
+      audioclipId:       int(audioclipId),
+      recordedAudio:     recordedAudio,
+      statusDisplay:     statusDisplay,
+      dialStatusDisplay: dialStatusDisplay,
+      userChoiceDisplay: userChoiceDisplay,
     }
 
     calls = append(calls, call)
@@ -206,9 +360,5 @@ func (client *Client) CallByPhoneNumber(campaignId int, phoneNumber string, from
     return
   }
 
-  return
-}
-
-func (client *Client) CallByCallId(callId int) (calls []Call, err error) {
   return
 }
