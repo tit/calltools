@@ -10,13 +10,6 @@ import (
   "time"
 )
 
-type AddCall struct {
-  CallId      int
-  Balance     float64
-  PhoneNumber string
-  Created     time.Time
-}
-
 func (client *Client) AddCall(campaignId int, phoneNumber string) (addCall AddCall, err error) {
   data := url.Values{
     "public_key":  {client.ApiPublicKey},
@@ -36,43 +29,42 @@ func (client *Client) AddCall(campaignId int, phoneNumber string) (addCall AddCa
     return
   }
 
-  callId, err := jsonparser.GetInt(body, "call_id")
+  addCall, err = addCallsByJson(body)
   if err != nil {
     return
-  }
-
-  balanceString, err := jsonparser.GetString(body, "balance")
-  if err != nil {
-    return
-  }
-  balance, err := strconv.ParseFloat(balanceString, bitSize64)
-  if err != nil {
-    return
-  }
-
-  phoneNumber, err = jsonparser.GetString(body, "phone")
-  if err != nil {
-    return
-  }
-
-  createdString, err := jsonparser.GetString(body, "created")
-  if err != nil {
-    return
-  }
-
-  created, err := time.Parse(time.RFC3339, createdString)
-  if err != nil {
-    return
-  }
-
-  addCall = AddCall{
-    CallId:      int(callId),
-    Balance:     balance,
-    PhoneNumber: phoneNumber,
-    Created:     created,
   }
 
   return
+}
+
+func (client *Client) AddCallWithTTS(campaignId int, phoneNumber string, text string, speaker string) (addCall AddCall, err error) {
+  data := url.Values{
+    "public_key":  {client.ApiPublicKey},
+    "campaign_id": {strconv.Itoa(campaignId)},
+    "phone":       {phoneNumber},
+    "text":        {text},
+    "speaker":     {speaker},
+  }
+
+  response, err := http.PostForm(pathPhonesCall, data)
+  if err != nil {
+    return
+  }
+
+  defer response.Body.Close()
+
+  body, err := ioutil.ReadAll(response.Body)
+  if err != nil {
+    return
+  }
+
+  addCall, err = addCallsByJson(body)
+  if err != nil {
+    return
+  }
+
+  return
+
 }
 
 func (client *Client) CallByPhoneNumber(campaignId int, phoneNumber string) (calls []Call, err error) {
@@ -123,38 +115,44 @@ func (client *Client) CallByCallId(callId int) (calls []Call, err error) {
   return
 }
 
-type Call struct {
-  phoneNumber       string
-  status            string
-  callId            int
-  created           time.Time
-  updated           time.Time
-  duration          int
-  ivrData           []IvrData
-  completed         time.Time
-  buttonNum         int
-  actionType        string
-  dialStatus        int
-  userChoice        string
-  audioclipId       int
-  recordedAudio     *url.URL
-  statusDisplay     string
-  userChoiceDisplay string
-  dialStatusDisplay string
-}
+func addCallsByJson(body []byte) (addCall AddCall, err error) {
+  callId, err := jsonparser.GetInt(body, "call_id")
+  if err != nil {
+    return
+  }
 
-type IvrData struct {
-  ivrNum       int
-  webhook      string
-  smsName      string
-  smsText      string
-  toPhone      string
-  buttonNum    int
-  toSipname    string
-  actionType   int
-  statusName   string
-  recognizeNum string
-  followIvrNum string
+  balanceString, err := jsonparser.GetString(body, "balance")
+  if err != nil {
+    return
+  }
+  balance, err := strconv.ParseFloat(balanceString, bitSize64)
+  if err != nil {
+    return
+  }
+
+  phoneNumber, err := jsonparser.GetString(body, "phone")
+  if err != nil {
+    return
+  }
+
+  createdString, err := jsonparser.GetString(body, "created")
+  if err != nil {
+    return
+  }
+
+  created, err := time.Parse(time.RFC3339, createdString)
+  if err != nil {
+    return
+  }
+
+  addCall = AddCall{
+    CallId:      int(callId),
+    Balance:     balance,
+    PhoneNumber: phoneNumber,
+    Created:     created,
+  }
+
+  return
 }
 
 func callsByJson(body []byte) (calls []Call, err error) {
