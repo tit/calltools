@@ -1,4 +1,4 @@
-package main
+package calltools
 
 import (
   "fmt"
@@ -108,6 +108,36 @@ func (client *Client) CallByCallId(callId int) (calls []Call, err error) {
   }
 
   calls, err = callsByJson(body)
+  if err != nil {
+    return
+  }
+
+  return
+}
+
+func (client *Client) RemoveCallByPhoneNumber(campaignId int, phoneNumber string) (err error) {
+  data := url.Values{
+    "public_key":  {client.ApiPublicKey},
+    "campaign_id": {strconv.Itoa(campaignId)},
+    "phone":       {phoneNumber},
+  }
+
+  _, err = http.PostForm(pathRemoveCall, data)
+  if err != nil {
+    return
+  }
+
+  return
+}
+
+func (client *Client) RemoveCallByCallID(campaignId int, callId int) (err error) {
+  data := url.Values{
+    "public_key":  {client.ApiPublicKey},
+    "campaign_id": {strconv.Itoa(campaignId)},
+    "call_id":     {strconv.Itoa(callId)},
+  }
+
+  _, err = http.PostForm(pathRemoveCall, data)
   if err != nil {
     return
   }
