@@ -28,35 +28,35 @@ type AddCall struct {
 }
 
 type IvrData struct {
-  ivrNum       int
-  webhook      string
-  smsName      string
-  smsText      string
-  toPhone      string
-  buttonNum    int
-  toSipname    string
-  actionType   int
-  statusName   string
-  recognizeNum string
-  followIvrNum string
+  IvrNum       int
+  Webhook      string
+  SmsName      string
+  SmsText      string
+  ToPhone      string
+  ButtonNum    int
+  ToSipname    string
+  ActionType   int
+  StatusName   string
+  RecognizeNum string
+  FollowIvrNum string
 }
 
 type Call struct {
-  phoneNumber       string
-  status            string
-  callId            int
-  created           time.Time
-  updated           time.Time
-  duration          int
-  ivrData           []IvrData
-  completed         time.Time
-  buttonNum         int
-  actionType        string
-  dialStatus        int
-  userChoice        string
-  audioclipId       int
-  recordedAudio     *url.URL
-  statusDisplay     string
-  userChoiceDisplay string
-  dialStatusDisplay string
+  PhoneNumber       string
+  Status            string
+  CallId            int
+  Created           time.Time
+  Updated           time.Time
+  Duration          int
+  IvrData           []IvrData
+  Completed         time.Time
+  ButtonNum         int
+  ActionType        string
+  DialStatus        int
+  UserChoice        string
+  AudioclipId       int
+  RecordedAudio     *url.URL
+  StatusDisplay     string
+  UserChoiceDisplay string
+  DialStatusDisplay string
 }

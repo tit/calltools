@@ -165,7 +165,7 @@ func addCallsByJson(body []byte) (addCall AddCall, err error) {
     return
   }
 
-  createdString, err := jsonparser.GetString(body, "created")
+  createdString, err := jsonparser.GetString(body, "Created")
   if err != nil {
     return
   }
@@ -192,7 +192,7 @@ func callsByJson(body []byte) (calls []Call, err error) {
       return
     }
 
-    status, err := jsonparser.GetString(value, "status")
+    status, err := jsonparser.GetString(value, "Status")
     if err != nil {
       return
     }
@@ -202,7 +202,7 @@ func callsByJson(body []byte) (calls []Call, err error) {
       return
     }
 
-    createdString, err := jsonparser.GetString(value, "created")
+    createdString, err := jsonparser.GetString(value, "Created")
     if err != nil {
       return
     }
@@ -212,7 +212,7 @@ func callsByJson(body []byte) (calls []Call, err error) {
       return
     }
 
-    updatedString, err := jsonparser.GetString(value, "updated")
+    updatedString, err := jsonparser.GetString(value, "Updated")
     if err != nil {
       return
     }
@@ -222,7 +222,7 @@ func callsByJson(body []byte) (calls []Call, err error) {
       return
     }
 
-    duration, err := jsonparser.GetInt(value, "duration")
+    duration, err := jsonparser.GetInt(value, "Duration")
     if err != nil {
       return
     }
@@ -285,24 +285,24 @@ func callsByJson(body []byte) (calls []Call, err error) {
       }
 
       ivrData := IvrData{
-        ivrNum:       int(ivrNum),
-        webhook:      webhook,
-        smsName:      smsName,
-        smsText:      smsText,
-        toPhone:      string(toPhone),
-        buttonNum:    int(buttonNum),
-        toSipname:    string(toSipname),
-        actionType:   int(actionType),
-        statusName:   statusName,
-        recognizeNum: string(recognizeNum),
-        followIvrNum: string(followIvrNum),
+        IvrNum:       int(ivrNum),
+        Webhook:      webhook,
+        SmsName:      smsName,
+        SmsText:      smsText,
+        ToPhone:      string(toPhone),
+        ButtonNum:    int(buttonNum),
+        ToSipname:    string(toSipname),
+        ActionType:   int(actionType),
+        StatusName:   statusName,
+        RecognizeNum: string(recognizeNum),
+        FollowIvrNum: string(followIvrNum),
       }
 
       ivrDatas = append(ivrDatas, ivrData)
 
     }, "ivr_data")
 
-    completedString, err := jsonparser.GetString(value, "completed")
+    completedString, err := jsonparser.GetString(value, "Completed")
     if err != nil {
       return
     }
@@ -363,23 +363,23 @@ func callsByJson(body []byte) (calls []Call, err error) {
     }
 
     call := Call{
-      phoneNumber:       phoneNumber,
-      status:            status,
-      callId:            int(callId),
-      created:           created,
-      updated:           updated,
-      duration:          int(duration),
-      ivrData:           ivrDatas,
-      completed:         completed,
-      buttonNum:         int(buttonNum),
-      actionType:        actionType,
-      dialStatus:        int(dialStatus),
-      userChoice:        userChoice,
-      audioclipId:       int(audioclipId),
-      recordedAudio:     recordedAudio,
-      statusDisplay:     statusDisplay,
-      dialStatusDisplay: dialStatusDisplay,
-      userChoiceDisplay: userChoiceDisplay,
+      PhoneNumber:       phoneNumber,
+      Status:            status,
+      CallId:            int(callId),
+      Created:           created,
+      Updated:           updated,
+      Duration:          int(duration),
+      IvrData:           ivrDatas,
+      Completed:         completed,
+      ButtonNum:         int(buttonNum),
+      ActionType:        actionType,
+      DialStatus:        int(dialStatus),
+      UserChoice:        userChoice,
+      AudioclipId:       int(audioclipId),
+      RecordedAudio:     recordedAudio,
+      StatusDisplay:     statusDisplay,
+      DialStatusDisplay: dialStatusDisplay,
+      UserChoiceDisplay: userChoiceDisplay,
     }
 
     calls = append(calls, call)
